@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>音乐小卡生成器 · 59×89mm</title>
+<style>
+  :root{
+    --bg:#0c0d10; --panel:#15171c; --panel2:#1c1f25; --line:#282c34;
+    --txt:#e9ebee; --muted:#8f949e; --accent:#7c8cff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;color:var(--txt);
+    font:14px/1.55 "PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:
+      radial-gradient(900px 520px at 78% -8%, #1d2233 0%, transparent 62%),
+      radial-gradient(700px 500px at 5% 100%, #161a24 0%, transparent 60%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{display:flex;min-height:100vh}
+
+  /* ---------- 控制面板 ---------- */
+  .panel{
+    width:370px;flex:0 0 370px;height:100vh;position:sticky;top:0;
+    background:linear-gradient(180deg,#16181e,#12141a);
+    border-right:1px solid var(--line);padding:20px 18px 40px;overflow-y:auto;
+  }
+  .panel::-webkit-scrollbar{width:9px}
+  .panel::-webkit-scrollbar-thumb{background:#2b3039;border-radius:9px}
+  .brand h1{font-size:16px;margin:0 0 3px;letter-spacing:.3px}
+  .brand p{margin:0;font-size:11.5px;color:var(--muted);letter-spacing:.2px}
+  .sec{border-top:1px solid var(--line);margin-top:16px;padding-top:14px}
+  .sec:first-of-type{border-top:0}
+  .sec h3{font-size:12px;margin:0 0 11px;color:#b9bfc9;letter-spacing:1px;font-weight:600}
+  .lbl{display:block;font-size:11.5px;color:var(--muted);margin:10px 0 5px}
+  .row{display:flex;justify-content:space-between;align-items:baseline;margin:12px 0 4px}
+  .row .lbl{margin:0}
+  .val{font-size:11.5px;color:#c7ccd4;font-variant-numeric:tabular-nums}
+
+  input[type=text],select{
+    width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--txt);font-size:13.5px;font-family:inherit;outline:none;
+  }
+  input[type=text]:focus,select:focus{border-color:#4a5468;background:#20242c}
+  input[type=range]{width:100%;accent-color:var(--accent);height:20px}
+  input[type=color]{
+    width:100%;height:34px;padding:0;border:1px solid var(--line);border-radius:9px;
+    background:var(--panel2);cursor:pointer;
+  }
+  .btn{
+    width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+    background:linear-gradient(180deg,#242833,#1d2027);color:var(--txt);
+    font-size:13px;font-family:inherit;cursor:pointer;transition:.16s;
+  }
+  .btn:hover{border-color:#48505f;transform:translateY(-1px)}
+  .btn:active{transform:none}
+  .btn.ghost{background:#1a1d24;font-size:12.5px;padding:8px 12px}
+  .btn.primary{
+    background:linear-gradient(180deg,#6b7cf5,#5262dd);border-color:#7c8cff;
+    font-weight:600;box-shadow:0 6px 18px rgba(90,105,230,.28);
+  }
+  .btn+.btn{margin-top:8px}
+
+  .seg{display:flex;gap:6px;background:#12141a;padding:4px;border-radius:10px;border:1px solid var(--line)}
+  .seg button{
+    flex:1;padding:7px 6px;border:0;border-radius:7px;background:transparent;
+    color:var(--muted);font-size:12px;font-family:inherit;cursor:pointer;transition:.15s;
+  }
+  .seg button.on{background:#2b303c;color:#fff}
+
+  .pane{margin-top:11px}
+  .hide{display:none!important}
+  .swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  .sw{
+    position:relative;height:36px;border-radius:9px;border:1px solid #333945;cursor:pointer;padding:0;
+  }
+  .sw.on{border-color:var(--accent);box-shadow:0 0 0 2px rgba(124,140,255,.28)}
+  .sw span{position:absolute;left:0;right:0;bottom:0;font-size:9px;color:#fff;
+    background:rgba(0,0,0,.42);padding:1px 0;text-align:center;border-radius:0 0 8px 8px}
+  .chips3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .chips2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+  .icons{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+  .ib{
+    aspect-ratio:1;border-radius:10px;border:1px solid var(--line);background:#1a1d24;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:.15s;
+    color:#c9ced8;
+  }
+  .ib:hover{border-color:#4a5468}
+  .ib.on{border-color:var(--accent);background:#242a3d;color:#fff}
+  .ib svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round}
+
+  .hintline{font-size:11.5px;color:var(--muted);margin-top:7px;display:flex;justify-content:space-between;gap:8px}
+  .hintline em{color:#c2c8d2;font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .check{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:#b6bcc6;cursor:pointer}
+  .check input{accent-color:var(--accent);width:15px;height:15px}
+  .tip{font-size:11px;color:var(--muted);margin:9px 0 0;line-height:1.6}
+
+  .cmykbox{margin-top:7px;border:1px solid var(--line);border-radius:10px;background:#12141a;padding:1px 10px}
+  .cmykrow{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:11.5px;color:#aeb4be}
+  .cmykrow+.cmykrow{border-top:1px solid #22262e}
+  .cmykdot{width:15px;height:15px;flex:none;border-radius:5px;border:1px solid rgba(255,255,255,.2)}
+  .cmykrow b{width:28px;flex:none;font-weight:600;color:#c7ccd4}
+  .cmykrow em{font-style:normal;font-variant-numeric:tabular-nums}
+  .cmykrow s{font-size:10.5px;margin-left:auto;text-decoration:none;color:#7c828e;font-variant-numeric:tabular-nums}
+  .cmykrow s.warn{color:#ffb454}
+
+  /* ---------- 舞台 ---------- */
+  .stage{
+    flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:16px;padding:26px;position:relative;
+  }
+  .stage::before{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:34px 34px;
+  }
+  #preview{
+    height:min(74vh,720px);width:auto;display:block;position:relative;
+    border-radius:3px;box-shadow:0 26px 60px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05);
+  }
+  .stage.drag::after{
+    content:"放开以设置为封面";position:absolute;inset:18px;border:2px dashed var(--accent);
+    border-radius:16px;display:flex;align-items:center;justify-content:center;
+    font-size:15px;color:#c9d0ff;background:rgba(100,115,255,.08);z-index:5;
+  }
+  .bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;z-index:1}
+  .bar span{
+    font-size:11px;color:#9aa1ad;background:#16181e;border:1px solid var(--line);
+    padding:4px 11px;border-radius:20px;letter-spacing:.3px;
+  }
+  @media (max-width:900px){
+    .app{flex-direction:column}
+    .panel{width:100%;flex:none;height:auto;position:static;border-right:0;border-bottom:1px solid var(--line)}
+    #preview{height:auto;width:100%;max-width:340px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ================= 控制面板 ================= -->
+  <aside class="panel">
+    <div class="brand">
+      <h1>音乐小卡生成器</h1>
+      <p>画布 59×89mm · 成品 55×85mm · 出血 2mm</p>
+    </div>
+
+    <section class="sec">
+      <h3>1 · 封面</h3>
+      <input type="file" id="coverInput" accept="image/*" hidden>
+      <button class="btn" id="pickCover">选择正方形封面图片</button>
+      <div class="hintline"><span>也可拖拽图片到右侧</span><em id="coverName">未选择</em></div>
+      <div class="seg" id="coverStyle" style="margin-top:9px">
+        <button data-v="square" class="on">方形封面</button>
+        <button data-v="vinyl">唱片样式</button>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h3>2 · 文字</h3>
+      <label class="lbl">歌曲名称</label>
+      <input type="text" id="title" value="夜空中最亮的星" maxlength="48" placeholder="输入歌曲名称">
+      <label class="lbl">歌手 / 艺人</label>
+      <input type="text" id="artist" value="逃跑计划" maxlength="32" placeholder="输入歌手名称">
+    </section>
+
+    <section class="sec">
+      <h3>3 · 进度条 &amp; 播放组件</h3>
+      <label class="lbl">当前时间 / 总时长（进度条左下 / 右下）</label>
+      <div class="chips2">
+        <input type="text" id="curTime" value="01:23" maxlength="10" placeholder="01:23">
+        <input type="text" id="totalTime" value="05:21" maxlength="10" placeholder="05:21">
+      </div>
+      <p class="tip">进度条长度 = 当前时间 ÷ 总时长，支持 mm:ss 或 hh:mm:ss。</p>
+
+      <label class="lbl" style="margin-top:14px">进度条下方装饰</label>
+      <div class="seg" id="ctrlMode">
+        <button data-v="controls" class="on">播放控件</button>
+        <button data-v="logo">播放器 Logo</button>
+        <button data-v="none">不显示</button>
+      </div>
+
+      <div class="pane" id="paneCtrl">
+        <label class="lbl">中间大按钮</label>
+        <div class="seg" id="ctrlCenter">
+          <button data-v="pause" class="on">暂停</button>
+          <button data-v="play">播放</button>
+        </div>
+      </div>
+
+      <div class="pane hide" id="paneLogo">
+        <div class="icons" id="iconRow"></div>
+        <label class="lbl">Logo 文字（留空则只显示图标）</label>
+        <input type="text" id="logoText" value="MUSIC" maxlength="18" placeholder="如 Apple Music / Spotify / 网易云音乐">
+        <div class="hintline" style="margin-top:9px"><span>或上传自己的 Logo 图片</span><em id="logoName"></em></div>
+        <input type="file" id="logoInput" accept="image/*" hidden>
+        <button class="btn ghost" id="pickLogo">上传自定义 Logo</button>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h3>4 · 背景</h3>
+      <div class="seg" id="bgMode">
+        <button data-v="auto" class="on">封面取色</button>
+        <button data-v="theme">主题渐变</button>
+        <button data-v="solid">纯色</button>
+      </div>
+
+      <div class="pane" id="paneAuto">
+        <div class="chips3">
+          <div><input type="color" id="a0"><div class="hintline" style="justify-content:center">起点</div></div>
+          <div><input type="color" id="a1"><div class="hintline" style="justify-content:center">中间</div></div>
+          <div><input type="color" id="a2"><div class="hintline" style="justify-content:center">终点</div></div>
+        </div>
+        <button class="btn ghost" id="reroll" style="margin-top:9px">换一版配色</button>
+        <p class="tip">由封面主色自动生成，可直接点色块微调。</p>
+      </div>
+
+      <div class="pane hide" id="paneTheme">
+        <div class="swatches" id="themeSw"></div>
+      </div>
+
+      <div class="pane hide" id="paneSolid">
+        <input type="color" id="solidColor" value="#2b2f45">
+      </div>
+
+      <div class="row"><span class="lbl">渐变角度</span><span class="val" id="angVal">95°</span></div>
+      <input type="range" id="angle" min="0" max="360" value="95">
+      <div class="row"><span class="lbl">背景明暗</span><span class="val" id="lumVal">0</span></div>
+      <input type="range" id="lum" min="-30" max="30" value="0">
+      <label class="check"><input type="checkbox" id="glow" checked> 柔光效果</label>
+      <label class="check"><input type="checkbox" id="softProof" checked> 印刷色域压缩（CMYK 软打样）</label>
+
+      <label class="lbl" style="margin-top:15px">当前用色的印刷色值</label>
+      <div class="cmykbox" id="cmykBox"></div>
+      <p class="tip">CMYK 数值可直接报给印厂核对；总墨量超过 300% 会标黄（铜版纸建议 ≤300%）。</p>
+    </section>
+
+    <section class="sec">
+      <h3>5 · 字体 / 字号</h3>
+
+      <!-- 歌名 -->
+      <label class="lbl" style="margin-top:0">歌名</label>
+      <div class="chips2">
+        <select id="titleFont"></select>
+        <input type="range" id="titleSize" min="3.0" max="8.0" step=".1" value="5.0">
+      </div>
+      <div class="hintline"><span>字号</span><em id="titleSizeV">5.0 mm</em></div>
+
+      <!-- 歌手 -->
+      <label class="lbl">歌手</label>
+      <div class="chips2">
+        <select id="artistFont"></select>
+        <input type="range" id="artistSize" min="1.8" max="5.0" step=".1" value="3.2">
+      </div>
+      <div class="hintline"><span>字号</span><em id="artistSizeV">3.2 mm</em></div>
+
+      <!-- Logo 文字 -->
+      <label class="lbl">Logo 文字</label>
+      <div class="chips2">
+        <select id="logoTextFont"></select>
+        <input type="range" id="logoTextSize" min="1.6" max="4.5" step=".1" value="2.8">
+      </div>
+      <div class="hintline"><span>字号</span><em id="logoTextSizeV">2.8 mm</em></div>
+
+      <!-- 进度条时间 -->
+      <label class="lbl">进度条两端时间</label>
+      <div class="chips2">
+        <select id="timeFont"></select>
+        <input type="range" id="timeSize" min="1.4" max="3.6" step=".1" value="2.2">
+      </div>
+      <div class="hintline"><span>字号</span><em id="timeSizeV">2.2 mm</em></div>
+
+      <!-- 进度条圆点 -->
+      <div class="row"><span class="lbl">进度条圆点半径</span><span class="val" id="dotVal">0.85 mm</span></div>
+      <input type="range" id="progressDot" min=".3" max="1.8" step=".05" value=".85">
+
+      <!-- 对齐 / 裁切线 -->
+      <div class="row"><span class="lbl">对齐</span></div>
+      <div class="seg" id="align">
+        <button data-v="left" class="on">左对齐</button>
+        <button data-v="center">居中</button>
+      </div>
+      <label class="lbl">文字颜色</label>
+      <div class="seg" id="textMode">
+        <button data-v="auto" class="on">自动</button>
+        <button data-v="light">白色</button>
+        <button data-v="dark">深色</button>
+      </div>
+      <label class="check"><input type="checkbox" id="guides" checked> 显示裁切线 / 安全区</label>
+
+      <!-- JSON 导入导出 -->
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn ghost" id="expFont">导出字体配置 JSON</button>
+        <button class="btn ghost" id="impFont">导入字体配置 JSON</button>
+      </div>
+      <input type="file" id="fontJson" accept="application/json" hidden>
+
+      <label class="lbl">自定义字体</label>
+      <input type="file" id="ttfInput" accept=".ttf,.otf,.woff,.woff2" hidden>
+      <button class="btn ghost" id="pickTtf">上传字体文件（TTF / OTF / WOFF）</button>
+      <div class="hintline"><span>最近加载</span><em id="ttfName">无</em></div>
+      <p class="tip">字体配置（字体族、字号、对齐、圆点）会保存到 JSON，可跨项目复用；上传的字体文件本身不写入 JSON，换设备需重新上传。</p>
+    </section>
+
+    <section class="sec">
+      <h3>6 · 导出</h3>
+      <button class="btn primary" id="expCmyk">导出 CMYK TIFF · 300dpi 含出血</button>
+      <button class="btn" id="expBleed">导出 PNG（RGB）· 含出血</button>
+      <button class="btn" id="expTrim">导出 PNG（RGB）· 成品尺寸</button>
+      <p class="tip">印刷请用 CMYK TIFF：TIFF 标准支持 CMYK 色彩空间，文件内为 C/M/Y/K 四通道，已做色域压缩与限墨（单色 ≤95%、总墨量 ≤300%），印厂可直接取用。PNG 格式标准上只支持 RGB，因此仅作屏幕预览 / 网络用图。</p>
+    </section>
+  </aside>
+
+  <!-- ================= 预览舞台 ================= -->
+  <main class="stage" id="stage">
+    <canvas id="preview"></canvas>
+    <div class="bar">
+      <span>画布 59 × 89 mm</span>
+      <span>成品 55 × 85 mm</span>
+      <span>出血各边 2 mm</span>
+      <span>300 dpi</span>
+    </div>
+  </main>
+</div>
+
+<script>
+/* =========================================================
+   音乐小卡生成器 —— 全部绘制基于 mm，1 单位 = 1mm
+   画布 59×89（含 2mm 出血） / 成品 55×85
+   ========================================================= */
+
+/* ---------------- 基础数学 / 颜色 ---------------- */
+const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+const TAU = Math.PI * 2;
+
+function hex2rgb(h){
+  h = h.replace('#','');
+  if(h.length === 3) h = h.split('').map(c=>c+c).join('');
+  return { r: parseInt(h.slice(0,2),16), g: parseInt(h.slice(2,4),16), b: parseInt(h.slice(4,6),16) };
+}
+function rgb2hex(r,g,b){
+  const f = v => clamp(Math.round(v),0,255).toString(16).padStart(2,'0');
+  return '#' + f(r) + f(g) + f(b);
+}
+function rgb2hsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  const mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx - mn;
+  let h = 0, s = 0; const l = (mx + mn) / 2;
+  if(d){
+    s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn);
+    if(mx === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if(mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h /= 6;
+  }
+  return { h: h * 360, s, l };
+}
+function hsl2rgb(hsl){
+  let { h, s, l } = hsl;
+  h = ((h % 360) + 360) % 360 / 360;
+  const f = (p,q,t) => {
+    if(t < 0) t += 1; if(t > 1) t -= 1;
+    if(t < 1/6) return p + (q - p) * 6 * t;
+    if(t < 1/2) return q;
+    if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    return p;
+  };
+  if(s === 0){ const v = l * 255; return { r:v, g:v, b:v }; }
+  const q = l < .5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  return { r: f(p,q,h + 1/3) * 255, g: f(p,q,h) * 255, b: f(p,q,h - 1/3) * 255 };
+}
+function hsl2hex(hsl){ const c = hsl2rgb(hsl); return rgb2hex(c.r, c.g, c.b); }
+function srgbLum(hex){
+  const c = hex2rgb(hex);
+  const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+  return .2126 * f(c.r) + .7152 * f(c.g) + .0722 * f(c.b);
+}
+function rgba(hex, a){ const c = hex2rgb(hex); return `rgba(${Math.round(c.r)},${Math.round(c.g)},${Math.round(c.b)},${a})`; }
+function adjustLum(hex, dl){
+  if(!dl) return hex;
+  const h = rgb2hsl(...Object.values(hex2rgb(hex)));
+  h.l = clamp(h.l + dl / 100, .02, .98);
+  return hsl2hex(h);
+}
+
+/* ---------------- CMYK 印刷色域 ----------------
+   浏览器只能渲染 sRGB，无法真正渲染 CMYK；这里用一个近似的印刷色域模型
+   （按色相限制彩度上限 + 限墨）把颜色压到"可印刷范围"内，
+   让屏幕预览 ≈ 印后效果，导出的 CMYK 文件也用同一套规则生成。 */
+const CAP_PTS = [[0,1.00],[60,1.00],[120,0.62],[180,0.84],[240,0.66],[300,0.86],[360,1.00]];
+const INK_MAX = .95;      // 单色墨量上限
+const TAC_MAX = 3.00;     // 总墨量上限（铜版纸建议 ≤300%）
+
+function satCap(h){                       // 色相 → 彩度上限（近似印刷色域），线性插值避免断层
+  h = ((h % 360) + 360) % 360;
+  for(let i = 0; i < CAP_PTS.length - 1; i++){
+    const a = CAP_PTS[i], b = CAP_PTS[i + 1];
+    if(h >= a[0] && h <= b[0]) return a[1] + (b[1] - a[1]) * (h - a[0]) / (b[0] - a[0]);
+  }
+  return 1;
+}
+function compressChroma(r, g, b){         // 保持色相与明度，仅把彩度压到上限内
+  const hsl = rgb2hsl(r, g, b);
+  const cap = satCap(hsl.h);
+  if(hsl.s <= cap) return { r, g, b };
+  hsl.s = cap;
+  const c = hsl2rgb(hsl);
+  return { r: c.r, g: c.g, b: c.b };
+}
+function rgb2cmyk(r, g, b){
+  r /= 255; g /= 255; b /= 255;
+  const k = 1 - Math.max(r, g, b);
+  if(k >= 1) return { c:0, m:0, y:0, k:1 };
+  return { c:(1 - r - k) / (1 - k), m:(1 - g - k) / (1 - k), y:(1 - b - k) / (1 - k), k };
+}
+function cmyk2rgb(c, m, y, k){
+  return { r: 255 * (1 - c) * (1 - k), g: 255 * (1 - m) * (1 - k), b: 255 * (1 - y) * (1 - k) };
+}
+function clampInk(ink){                   // 限墨：C/M/Y ≤95%、K ≤100%、总墨量 ≤300%
+  let c = clamp(ink.c, 0, INK_MAX), m = clamp(ink.m, 0, INK_MAX),
+      y = clamp(ink.y, 0, INK_MAX), k = clamp(ink.k, 0, 1);
+  const over = c + m + y + k - TAC_MAX;
+  if(over > 0){
+    const cmy = c + m + y;
+    if(cmy > 0){
+      const f = Math.max(0, (cmy - over) / cmy);   // 等比削减 CMY，保留 K
+      c *= f; m *= f; y *= f;
+    }
+  }
+  return { c, m, y, k };
+}
+function printCMYK(hex){                  // RGB → 印刷色域内的 CMYK（0~1）
+  const p = hex2rgb(hex), q = compressChroma(p.r, p.g, p.b);
+  return clampInk(rgb2cmyk(q.r, q.g, q.b));
+}
+function printHex(hex){                   // RGB → 印刷色域内的 RGB（用于预览与导出）
+  const i = printCMYK(hex), c = cmyk2rgb(i.c, i.m, i.y, i.k);
+  return rgb2hex(c.r, c.g, c.b);
+}
+function cmykOf(hex){                     // 某色的 CMYK 百分比 + 总墨量
+  const i = printCMYK(hex);
+  return { c: Math.round(i.c * 100), m: Math.round(i.m * 100),
+           y: Math.round(i.y * 100), k: Math.round(i.k * 100),
+           tac: Math.round((i.c + i.m + i.y + i.k) * 100) };
+}
+/* 固定种子随机数，保证同一配色稳定 */
+function mulberry(seed){
+  let a = Math.floor(seed) || 1;
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------------- 画布路径工具 ---------------- */
+function rrectPath(ctx, x, y, w, h, r){
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function circlePath(ctx, cx, cy, r){ ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); }
+function gradLine(W, H, deg){
+  const rad = deg * Math.PI / 180, cx = W / 2, cy = H / 2;
+  const len = Math.abs(W * Math.cos(rad)) + Math.abs(H * Math.sin(rad));
+  const dx = Math.cos(rad) * len / 2, dy = Math.sin(rad) * len / 2;
+  return [cx - dx, cy - dy, cx + dx, cy + dy];
+}
+
+/* ---------------- 字体 / 主题 / 图标 ---------------- */
+const FONTS = {
+  sans : { n:'现代黑体', css:'"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif', w:800 },
+  serif: { n:'优雅衬线', css:'"Songti SC","Noto Serif SC","SimSun",Georgia,serif', w:700 },
+  round: { n:'圆体 / 亲和', css:'"Yuanti SC","YouYuan","PingFang SC","Microsoft YaHei",sans-serif', w:600 },
+  mono : { n:'等宽 / 科技', css:'"SF Mono",ui-monospace,Consolas,"Courier New",monospace', w:700 },
+  latin: { n:'英文古典', css:'Georgia,"Times New Roman","Songti SC",serif', w:700 }
+};
+
+const THEMES = [
+  { n:'深海',   c:['#0b1a2b','#1b3a5c','#3f7fa6'] },
+  { n:'午夜蓝', c:['#12131c','#22304d','#4a6bb0'] },
+  { n:'紫夜',   c:['#1a1033','#3a2260','#8b5cf6'] },
+  { n:'墨玉',   c:['#101112','#2a2f33','#4b585f'] },
+  { n:'森林',   c:['#0d1f18','#17503f','#5fbf8a'] },
+  { n:'极光',   c:['#0b2545','#1f6feb','#57e0c9'] },
+  { n:'青柠',   c:['#0f2b1f','#1f8a5f','#a8e063'] },
+  { n:'蜜桃',   c:['#3a1420','#c2455b','#ffa07a'] },
+  { n:'玫瑰金', c:['#2b1420','#8c3b52','#e0a878'] },
+  { n:'樱花',   c:['#2a1a22','#a2566e','#ffc2cf'] },
+  { n:'暖阳',   c:['#2a1a08','#c47a1c','#ffd479'] },
+  { n:'落霞',   c:['#2a1030','#a03a7a','#ff9f68'] },
+  { n:'奶油',   c:['#ded9d2','#f2eee8','#ffffff'] },
+  { n:'雾灰',   c:['#d6dae0','#eceef1','#fbfbfc'] }
+];
+
+/* 图标：全部用画布图元绘制，坐标以 (0,0) 为中心、24×24 为基准框 */
+const ICONS = {
+  note(ctx, col){ // ♫ 双八分音符
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.7;
+    ctx.beginPath();
+    ctx.moveTo(-2.4, 5.2); ctx.lineTo(-2.4, -5.6); ctx.lineTo(5.6, -7.6); ctx.lineTo(5.6, 3.2);
+    ctx.stroke();
+    circlePath(ctx, -4.6, 5.2, 2.6); ctx.fill();
+    circlePath(ctx, 3.4, 3.2, 2.6); ctx.fill();
+  },
+  vinyl(ctx, col){ // 黑胶唱片
+    ctx.strokeStyle = col; ctx.lineWidth = 1.6;
+    circlePath(ctx, 0, 0, 9.2); ctx.stroke();
+    circlePath(ctx, 0, 0, 5.4); ctx.stroke();
+    ctx.fillStyle = col; circlePath(ctx, 0, 0, 1.7); ctx.fill();
+  },
+  play(ctx, col){ // 播放按钮
+    ctx.strokeStyle = col; ctx.lineWidth = 1.7;
+    circlePath(ctx, 0, 0, 9.2); ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.moveTo(-1.6, -3.9); ctx.lineTo(4.6, 0); ctx.lineTo(-1.6, 3.9); ctx.closePath(); ctx.fill();
+  },
+  bars(ctx, col){ // 声波均衡器
+    ctx.fillStyle = col;
+    const hs = [9, 17, 22, 13, 7], w = 2.6;
+    hs.forEach((h, i) => {
+      const x = -8.4 + i * 4.2 - w / 2;
+      rrectPath(ctx, x, -h / 2, w, h, w / 2); ctx.fill();
+    });
+  },
+  box(ctx, col){ // 圆角方框 + 音符
+    ctx.strokeStyle = col; ctx.lineWidth = 1.8;
+    rrectPath(ctx, -9.5, -9.5, 19, 19, 5.4); ctx.stroke();
+    ctx.save(); ctx.translate(-0.2, 0.6); ctx.scale(.58, .58); ICONS.note(ctx, col); ctx.restore();
+  },
+  /* —— 播放控件（底部装饰）—— 按用户给的参考图重画：描边线 + 实心箭头头 + 胶囊形 —— */
+  shuffle(ctx, col){ // ↔ 随机：两条 S 形线中部交叉（左平入→右平出），两个实心箭头都在右端指向右
+    ctx.strokeStyle = col; ctx.fillStyle = col;
+    ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // 上线：左上 → S 形下弯 → 右下
+    ctx.beginPath();
+    ctx.moveTo(-12, -5.2); ctx.lineTo(-5.5, -5.2);
+    ctx.bezierCurveTo(-1.5, -5.2, -0.5, 5.2, 3.5, 5.2);
+    ctx.lineTo(6.3, 5.2); ctx.stroke();
+    // 下线：左下 → S 形上弯 → 右上
+    ctx.beginPath();
+    ctx.moveTo(-12, 5.2); ctx.lineTo(-5.5, 5.2);
+    ctx.bezierCurveTo(-1.5, 5.2, -0.5, -5.2, 3.5, -5.2);
+    ctx.lineTo(6.3, -5.2); ctx.stroke();
+    // 右上实心箭头（指向右）
+    ctx.beginPath();
+    ctx.moveTo(5.6, -8.4); ctx.lineTo(11.6, -5.2); ctx.lineTo(5.6, -2.0);
+    ctx.closePath(); ctx.fill();
+    // 右下实心箭头（指向右）
+    ctx.beginPath();
+    ctx.moveTo(5.6, 2.0); ctx.lineTo(11.6, 5.2); ctx.lineTo(5.6, 8.4);
+    ctx.closePath(); ctx.fill();
+  },
+  prev(ctx, col){ // ⏮ 上一首：描边竖条 + 实心左三角（圆角）
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(7.6, -7.8); ctx.lineTo(7.6, 7.8); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-7.8, 0); ctx.lineTo(4.0, -7.2); ctx.lineTo(4.0, 7.2); ctx.closePath();
+    ctx.fill();
+    ctx.lineWidth = 1.4; ctx.stroke();   // 同色细描边柔化尖角
+  },
+  next(ctx, col){ // ⏭ 下一首（prev 镜像）
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(-7.6, -7.8); ctx.lineTo(-7.6, 7.8); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(7.8, 0); ctx.lineTo(-4.0, -7.2); ctx.lineTo(-4.0, 7.2); ctx.closePath();
+    ctx.fill();
+    ctx.lineWidth = 1.4; ctx.stroke();
+  },
+  pause(ctx, col){ // ❙❙ 暂停：两根圆胖胶囊（填充，圆角=半宽）
+    ctx.fillStyle = col;
+    rrectPath(ctx, -6.2, -8.2, 4.4, 16.4, 2.2); ctx.fill();
+    rrectPath(ctx,  1.8, -8.2, 4.4, 16.4, 2.2); ctx.fill();
+  },
+  playTri(ctx, col){ // ▶ 播放：竖直左边的瘦高三角（宽:高≈0.74），三角带小圆角
+    ctx.fillStyle = col; ctx.lineJoin = 'round';
+    // 顶点：A 左上 / B 右尖 / C 左下；各角按 1.4 单位圆角截断
+    const A = [-5.5, -7.8], B = [6.0, 0], C = [-5.5, 7.8];
+    ctx.beginPath();
+    ctx.moveTo(-4.34, -7.01);          // A→B 边上近 A 点
+    ctx.lineTo(4.84, -0.79);           // A→B 边上近 B 点
+    ctx.quadraticCurveTo(B[0], B[1], 4.84, 0.79);
+    ctx.lineTo(-4.34, 7.01);           // B→C 边上近 C 点
+    ctx.quadraticCurveTo(C[0], C[1], -5.5, 6.4);
+    ctx.lineTo(-5.5, -6.4);            // 竖直左边
+    ctx.quadraticCurveTo(A[0], A[1], -4.34, -7.01);
+    ctx.closePath(); ctx.fill();
+  },
+  list(ctx, col){ // ☰ 播放列表：三条粗横线（纯填充胶囊，无左侧小竖条）
+    ctx.fillStyle = col;
+    [-5.6, 0, 5.6].forEach(y => {
+      rrectPath(ctx, -8.2, y - 1.1, 16.4, 2.2, 1.1); ctx.fill();
+    });
+  }
+};
+const ICON_ROW = [
+  { id:'note',  t:'音符' }, { id:'vinyl', t:'唱片' }, { id:'play', t:'播放' },
+  { id:'bars',  t:'声波' }, { id:'box',   t:'音符框' }, { id:'custom', t:'自定义' },
+  { id:'none',  t:'不显示' }
+];
+function drawIcon(ctx, id, cx, cy, size, color){
+  const fn = ICONS[id]; if(!fn) return;
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(size / 24, size / 24);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  fn(ctx, color);
+  ctx.restore();
+}
+/* 面板上的图标缩略图（与画布图元视觉一致） */
+const ICON_SVG = {
+  note : '<path d="M9.6 17.4V6.4l8-2v11"/><circle cx="7.3" cy="17.4" r="2.6"/><circle cx="15.3" cy="15.4" r="2.6"/>',
+  vinyl: '<circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="5.4"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/>',
+  play : '<circle cx="12" cy="12" r="9.2"/><path d="M10.4 8.1l6.2 3.9-6.2 3.9z" fill="currentColor" stroke="none"/>',
+  bars : '<path d="M7.7 14v-4M12 15.5v-7M16.3 14v-4"/>',
+  box  : '<rect x="2.5" y="2.5" width="19" height="19" rx="5.4"/><path d="M10.8 16V9.5l4.6-1.1V14"/><circle cx="9.6" cy="16" r="1.5"/><circle cx="14.2" cy="14.9" r="1.5"/>'
+};
+
+/* ---------------- 状态 ---------------- */
+const state = {
+  cover : null,          // 封面（已转印刷色域，供绘制与取色）
+  srcCover : null,       // 原始封面
+  coverStyle : 'square', // 封面样式：square 方形 / vinyl 唱片
+  customLogo : null,     // 自定义 logo Image
+  title : '夜空中最亮的星',
+  artist : '逃跑计划',
+  logoSrc : 'note',
+  logoText : 'MUSIC',
+  ctrlMode : 'controls',   // controls | logo | none
+  ctrlCenter : 'pause',
+  curTime : '01:23',
+  totalTime : '05:21',
+  bgMode : 'auto',
+  themeIdx : 0,
+  solid : '#2b2f45',
+  auto : { colors:['#12161f','#2b3a67','#8fa2ff'], seed: 7 },
+  modes : { auto:{angle:95,lum:0}, theme:{angle:95,lum:0}, solid:{angle:95,lum:0} },
+  glow : true,
+  softProof : true,      // 印刷色域压缩（CMYK 软打样）
+  align : 'left',
+  font : 'sans',
+  textMode : 'auto',
+  guides : true,
+
+  /* —— 字体 / 字号配置（每块独立） —— */
+  titleFont  : 'sans',  titleSize  : 5.0,
+  artistFont : 'sans',  artistSize : 3.2,
+  logoTextFont : 'sans', logoTextSize : 2.8,
+  timeFont : 'sans',    timeSize   : 2.2,
+
+  /* —— 播放控件尺寸（mm） —— */
+  progressDot : 0.85     // 进度条圆点半径（轨道粗 0.7mm）
+};
+const qs = id => document.querySelector(id);
+
+/* =========================================================
+   封面主色提取（k-means）+ 自动渐变生成
+   ========================================================= */
+function extractPalette(img, seed){
+  const N = 56, K = 5;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = N;
+  const cx = cv.getContext('2d', { willReadFrequently:true });
+  cx.drawImage(img, 0, 0, N, N);
+  const d = cx.getImageData(0, 0, N, N).data;
+  const pts = [];
+  for(let i = 0; i < d.length; i += 4){
+    if(d[i+3] < 200) continue;
+    pts.push([d[i], d[i+1], d[i+2]]);
+  }
+  if(!pts.length) return null;
+
+  const rnd = mulberry(seed || 1);
+  const lumOf = p => .2126*p[0] + .7152*p[1] + .0722*p[2];
+  const sorted = pts.slice().sort((a,b) => lumOf(a) - lumOf(b));
+  // 按亮度分位取初始中心，再加一点随机抖动，得到"换一版"的差异
+  let cents = [];
+  for(let i = 0; i < K; i++){
+    const p = sorted[Math.floor((i + .5) / K * sorted.length)];
+    cents.push([clamp(p[0] + (rnd() - .5) * 70, 0, 255),
+                clamp(p[1] + (rnd() - .5) * 70, 0, 255),
+                clamp(p[2] + (rnd() - .5) * 70, 0, 255)]);
+  }
+  const assign = () => {
+    const w = new Array(K).fill(0);
+    const sums = Array.from({length:K}, () => [0,0,0,0]);
+    for(const p of pts){
+      let bi = 0, bd = Infinity;
+      for(let k = 0; k < K; k++){
+        const c = cents[k];
+        const dd = (p[0]-c[0])**2 + (p[1]-c[1])**2 + (p[2]-c[2])**2;
+        if(dd < bd){ bd = dd; bi = k; }
+      }
+      const s = sums[bi];
+      s[0] += p[0]; s[1] += p[1]; s[2] += p[2]; s[3]++;
+    }
+    return { sums, w };
+  };
+  for(let it = 0; it < 10; it++){
+    const { sums } = assign();
+    for(let k = 0; k < K; k++){
+      const s = sums[k];
+      if(s[3]) cents[k] = [s[0]/s[3], s[1]/s[3], s[2]/s[3]];
+    }
+  }
+  const { w } = assign();
+  return cents.map((c, k) => ({
+    rgb: c, w: w[k] / pts.length, hsl: rgb2hsl(c[0], c[1], c[2])
+  }));
+}
+/* 把主色簇转成协调的三段渐变（起点 / 中间 / 终点） */
+function buildAutoColors(list, seed){
+  const rnd = mulberry((seed || 1) * 7919 + 13);
+  const chroma = c => (Math.max(...c.rgb) - Math.min(...c.rgb)) / 255;   // 真实彩度
+  const items = list.map(c => Object.assign({}, c, { ch: chroma(c) }));
+  const byLum = items.slice().sort((a,b) => a.hsl.l - b.hsl.l);
+  const maxCh = Math.max(...items.map(c => c.ch));
+  // 起点：偏暗、有一定占比的主色
+  const base = byLum.find(c => c.w >= .08) || byLum[0];
+  // 中间：彩度高且占比不低的主色
+  const score = c => c.ch * (.4 + Math.min(c.w * 3, 1));
+  const vib = items.slice().sort((a,b) => score(b) - score(a))[0];
+
+  // 近乎黑白 / 低彩度封面 —— 沿用原色相的淡色调，避免出现随机褐色或过饱和
+  if(maxCh < .10){
+    const h = base.hsl.h;
+    return [
+      hsl2hex({ h, s:.13, l: clamp(base.hsl.l * .55 + .10, .10, .26) }),
+      hsl2hex({ h, s:.10, l: clamp(base.hsl.l * .45 + .30, .28, .46) }),
+      hsl2hex({ h, s:.06, l: clamp(base.hsl.l * .28 + .52, .46, .68) })
+    ];
+  }
+  // "换一版"：整体色相偏移 ±30°，用整数哈希保证不同 seed 的差异明显
+  const rot = ((seed * 2654435761) >>> 0) % 61 - 30;
+  let h2 = vib.hsl.h;
+  if(Math.abs(base.hsl.h - h2) < 14) h2 += 14 + rnd() * 14;   // 色相过近时拉开层次
+  h2 += rot;
+  const c1 = { h: base.hsl.h + rot * .35, s: clamp(base.ch * .9 + .10, .14, .62), l: clamp(base.hsl.l * .55 + .10, .10, .26) };
+  const c2 = { h: h2, s: clamp(vib.ch + .16, .22, .72), l: clamp(vib.hsl.l * .45 + .30 + (rnd() - .5) * .05, .28, .56) };
+  const c3 = { h: h2, s: clamp(vib.ch * .8 + .08, .10, .55), l: clamp(vib.hsl.l * .25 + .55, .50, .80) };
+  return [ hsl2hex(c1), hsl2hex(c2), hsl2hex(c3) ];
+}
+/* 上传封面后逐像素转 CMYK：色域压缩 → 转 CMYK → 限墨 → 回转 RGB，
+   得到"屏幕所见 ≈ 印后效果"的封面，并直接从这个结果提取主色。 */
+function toPrintImage(img){
+  const MAX = 1100;
+  const m = Math.min(img.width, img.height);                 // 居中裁成正方形
+  const size = Math.min(m, MAX);
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = size;
+  const cx = cv.getContext('2d', { willReadFrequently:true });
+  cx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, size, size);
+  const id = cx.getImageData(0, 0, size, size), d = id.data;
+  for(let i = 0; i < d.length; i += 4){
+    if(d[i + 3] < 8) continue;
+    const q = compressChroma(d[i], d[i + 1], d[i + 2]);
+    const ink = clampInk(rgb2cmyk(q.r, q.g, q.b));
+    const out = cmyk2rgb(ink.c, ink.m, ink.y, ink.k);
+    d[i] = Math.round(out.r); d[i + 1] = Math.round(out.g); d[i + 2] = Math.round(out.b);
+  }
+  cx.putImageData(id, 0, 0);
+  return cv;
+}
+
+/* =========================================================
+   排版测量
+   ========================================================= */
+function wrapLines(ctx, text, max){
+  const out = []; let cur = '';
+  for(const ch of [...text]){
+    const test = cur + ch;
+    if(cur && ctx.measureText(test).width > max){ out.push(cur.replace(/\s+$/,'')); cur = ch; }
+    else cur = test;
+  }
+  if(cur) out.push(cur.replace(/\s+$/,''));
+  return out.filter(l => l !== '');
+}
+function ellipsize(ctx, text, max){
+  if(ctx.measureText(text).width <= max) return text;
+  let t = text;
+  while(t.length > 1 && ctx.measureText(t + '…').width > max) t = t.slice(0, -1);
+  return t + '…';
+}
+function fitTitle(ctx, text, maxMM, S, fam, weight, baseSize){
+  const max = maxMM * S;
+  const t = (text || '').trim() || '未命名';
+  const bs = baseSize || 5.0;
+  const lo = Math.max(2.4, bs * 0.55);
+  const set = s => ctx.font = `${weight} ${s * S}px ${fam}`;
+
+  for(let s = bs; s >= lo; s -= .1){            // 优先单行大字号
+    set(s);
+    if(ctx.measureText(t).width <= max) return { size: +s.toFixed(2), lines:[t] };
+  }
+  for(let s = bs * 0.92; s >= lo; s -= .1){     // 其次两行（起点略小，降低折两行阈值）
+    set(s);
+    const ls = wrapLines(ctx, t, max);
+    if(ls.length === 2) return { size: +s.toFixed(2), lines:ls };
+  }
+  set(lo);                                       // 兜底：截断
+  const ls = wrapLines(ctx, t, max);
+  if(ls.length > 2) return { size: +lo.toFixed(2), lines:[ls[0], ellipsize(ctx, ls.slice(1).join(''), max)] };
+  return { size: +lo.toFixed(2), lines: ls.length ? ls : [t] };
+}
+
+/* =========================================================
+   绘制主流程（所有坐标 mm）
+   ========================================================= */
+function activeColors(){
+  const md = state.modes[state.bgMode];
+  let base;
+  if(state.bgMode === 'auto')       base = state.auto.colors;
+  else if(state.bgMode === 'theme') base = THEMES[state.themeIdx].c;
+  else                              base = [state.solid, state.solid, state.solid];
+  return base.map(c => {
+    const h = adjustLum(c, md.lum);
+    return state.softProof ? printHex(h) : h;      // 软打样：压到印刷色域内
+  });
+}
+function textColorFor(cols){
+  if(state.textMode === 'light') return '#ffffff';
+  if(state.textMode === 'dark')  return '#14161a';
+  // 文字落在渐变的下半段，取中间色与终点色估算背景亮度
+  const l = srgbLum(cols[1]) * .45 + srgbLum(cols[2]) * .55;
+  return l > .28 ? '#14161a' : '#ffffff';
+}
+
+function drawCard(ctx, S, opt){
+  const o = Object.assign({ guides:false }, opt || {});
+  const P = mm => mm * S;
+  const W = P(59), H = P(89);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const cols = activeColors();
+  const tc = textColorFor(cols);
+  const md = state.modes[state.bgMode];
+
+  /* —— 背景渐变 —— */
+  const gl = gradLine(W, H, md.angle);
+  const grad = ctx.createLinearGradient(gl[0], gl[1], gl[2], gl[3]);
+  grad.addColorStop(0, cols[0]);
+  grad.addColorStop(.52, cols[1]);
+  grad.addColorStop(1, cols[2]);
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+  /* —— 柔光 —— */
+  if(state.glow){
+    const rg = ctx.createRadialGradient(W * .5, P(23), 0, W * .5, P(23), P(42));
+    rg.addColorStop(0, rgba(cols[2], .30));
+    rg.addColorStop(.5, rgba(cols[2], .09));
+    rg.addColorStop(1, rgba(cols[2], 0));
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  }
+
+  /* —— 排版测量 —— */
+  const TF = FONTS[state.titleFont],  tFam = TF.css,  tW = TF.w;
+  const fit = fitTitle(ctx, state.title, 45, S, tFam, tW, state.titleSize);
+  const twoLine = fit.lines.length > 1;
+
+  /* —— 封面：与安全区同宽（两行歌名时略缩以留出行高） —— */
+  const covS = twoLine ? 41 : 45;
+  drawCover(ctx, P((59 - covS) / 2), P(7), P(covS), S, tc);
+
+  /* —— 歌名（末行基线固定 61.5mm） —— */
+  const tx = state.align === 'center' ? P(29.5) : P(7);
+  ctx.textAlign = state.align === 'center' ? 'center' : 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = tc;
+  const lh = fit.size * 1.16;
+  const base1 = 61.5 - (fit.lines.length - 1) * lh;
+  ctx.font = `${tW} ${fit.size * S}px ${tFam}`;
+  fit.lines.forEach((ln, i) => ctx.fillText(ln, tx, P(base1 + i * lh)));
+
+  /* —— 歌手 —— */
+  const artist = (state.artist || '').trim();
+  if(artist){
+    const AF = FONTS[state.artistFont], aFam = AF.css;
+    let as = state.artistSize;
+    const minAs = Math.max(1.8, state.artistSize * 0.55);
+    for(; as >= minAs; as -= .1){
+      ctx.font = `500 ${as * S}px ${aFam}`;
+      if(ctx.measureText(artist).width <= P(45)) break;
+    }
+    ctx.font = `500 ${as * S}px ${aFam}`;
+    ctx.globalAlpha = .72;
+    ctx.fillText(ellipsize(ctx, artist, P(45)), tx, P(67.5));
+    ctx.globalAlpha = 1;
+  }
+
+  /* —— 播放进度条（两端为时间） —— */
+  drawProgress(ctx, S, tc);
+
+  /* —— 底部播放组件装饰 —— */
+  drawBottom(ctx, S, tc);
+
+  /* —— 参考线（仅预览） —— */
+  if(o.guides) drawGuides(ctx, S);
+}
+
+function drawCover(ctx, x, y, s, S, tc){
+  if(state.coverStyle === 'vinyl'){ drawVinylCover(ctx, x, y, s, S, tc); return; }
+  const P = mm => mm * S;
+  const r = P(2.6);
+  // 投影
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.45)';
+  ctx.shadowBlur = P(2.4); ctx.shadowOffsetY = P(.9);
+  ctx.fillStyle = 'rgba(16,17,22,.92)';
+  rrectPath(ctx, x, y, s, s, r); ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  rrectPath(ctx, x, y, s, s, r); ctx.clip();
+  if(state.cover){
+    const im = state.cover, m = Math.min(im.width, im.height);   // 居中裁成正方形
+    ctx.drawImage(im, (im.width - m) / 2, (im.height - m) / 2, m, m, x, y, s, s);
+  }else{
+    ctx.fillStyle = 'rgba(255,255,255,.08)';
+    ctx.fillRect(x, y, s, s);
+    ctx.globalAlpha = .6;
+    drawIcon(ctx, 'note', x + s / 2, y + s / 2 - P(3.4), P(9), tc);
+    ctx.fillStyle = tc;
+    ctx.font = `600 ${P(3.3)}px ${FONTS[state.titleFont].css}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('点击上传封面', x + s / 2, y + s / 2 + P(7));
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+
+  // 描边高光
+  ctx.save();
+  ctx.strokeStyle = rgba(tc === '#ffffff' ? '#ffffff' : '#000000', .10);
+  ctx.lineWidth = P(.35);
+  rrectPath(ctx, x, y, s, s, r); ctx.stroke();
+  ctx.restore();
+}
+
+/* 唱片样式封面：黑胶圆盘 + 同心纹 + 中央圆形封面 */
+function drawVinylCover(ctx, x, y, s, S, tc){
+  const P = mm => mm * S;
+  const cx = x + s / 2, cy = y + s / 2, R = s / 2;
+  const circle = r => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); };
+
+  // 投影
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.5)';
+  ctx.shadowBlur = P(2.6); ctx.shadowOffsetY = P(1);
+  ctx.fillStyle = '#0a0a0c';
+  circle(R); ctx.fill();
+  ctx.restore();
+
+  // 盘体：偏心径向渐变（左上微光）
+  const g = ctx.createRadialGradient(cx - R * .35, cy - R * .35, R * .1, cx, cy, R);
+  g.addColorStop(0, '#24252b'); g.addColorStop(.55, '#131418'); g.addColorStop(1, '#0a0a0c');
+  ctx.fillStyle = g;
+  circle(R); ctx.fill();
+
+  // 同心纹（标签外缘 ~ 盘边，交替透明度）
+  const rLab = R * .64;
+  ctx.save();
+  circle(R); ctx.clip();
+  const grooves = 26, rIn = rLab + R * .02, span = R * .985 - rIn;
+  ctx.lineWidth = Math.max(P(.05), 1);
+  for(let i = 0; i < grooves; i++){
+    const rr = rIn + span * (i + .5) / grooves;
+    ctx.strokeStyle = `rgba(255,255,255,${i % 2 ? .030 : .055})`;
+    circle(rr); ctx.stroke();
+  }
+  // 两条稍宽的分轨暗纹
+  [0.40, 0.72].forEach(t => {
+    ctx.strokeStyle = 'rgba(0,0,0,.35)';
+    ctx.lineWidth = P(.22);
+    circle(rIn + span * t); ctx.stroke();
+  });
+  // 锥形高光（支持 conic 时），两道柔和反光
+  if(ctx.createConicGradient){
+    const cg = ctx.createConicGradient(-Math.PI * .75, cx, cy);
+    cg.addColorStop(0, 'rgba(255,255,255,0)');
+    cg.addColorStop(.06, 'rgba(255,255,255,.075)');
+    cg.addColorStop(.14, 'rgba(255,255,255,0)');
+    cg.addColorStop(.5, 'rgba(255,255,255,0)');
+    cg.addColorStop(.56, 'rgba(255,255,255,.05)');
+    cg.addColorStop(.64, 'rgba(255,255,255,0)');
+    cg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = cg;
+    // 高光只落在纹槽区，不盖住标签
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.arc(cx, cy, rLab, 0, Math.PI * 2, true);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // 边缘圈
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.10)';
+  ctx.lineWidth = P(.3);
+  circle(R - P(.15)); ctx.stroke();
+  ctx.restore();
+
+  // 中央圆形封面（标签）
+  ctx.save();
+  circle(rLab); ctx.clip();
+  if(state.cover){
+    const im = state.cover, m = Math.min(im.width, im.height);
+    ctx.drawImage(im, (im.width - m) / 2, (im.height - m) / 2, m, m,
+      cx - rLab, cy - rLab, rLab * 2, rLab * 2);
+  }else{
+    ctx.fillStyle = 'rgba(255,255,255,.07)';
+    ctx.fillRect(cx - rLab, cy - rLab, rLab * 2, rLab * 2);
+    ctx.globalAlpha = .65;
+    drawIcon(ctx, 'note', cx, cy - P(2.6), P(7), tc);
+    ctx.fillStyle = tc;
+    ctx.font = `600 ${P(2.6)}px ${FONTS[state.titleFont].css}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('点击上传封面', cx, cy + P(5.6));
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+
+  // 标签内缘压线
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,.45)';
+  ctx.lineWidth = P(.25);
+  circle(rLab); ctx.stroke();
+  ctx.restore();
+}
+
+function drawLogo(ctx, S, tc){
+  if(state.logoSrc === 'none') return;
+  const P = mm => mm * S;
+  const ih = 5.0, cy = 79.2;
+  const isCustom = state.logoSrc === 'custom' && state.customLogo;
+  const LF = FONTS[state.logoTextFont], lFam = LF.css;
+
+  let iw = ih;
+  if(isCustom){
+    const ratio = state.customLogo.width / state.customLogo.height;
+    iw = ih * ratio;
+    if(iw > 24) iw = 24;
+  }
+  const label = (state.logoText || '').trim();
+  let lw = 0;
+  if(label){
+    ctx.font = `700 ${state.logoTextSize * S}px ${lFam}`;
+    if('letterSpacing' in ctx) ctx.letterSpacing = (0.35 * S) + 'px';
+    lw = ctx.measureText(label).width;
+  }
+  const gap = label ? 1.8 : 0;
+  const gw = iw + gap + lw;
+  const gx = state.align === 'center' ? (59 - gw) / 2 : 7;
+
+  if(isCustom){
+    const dh = Math.min(ih, iw / (state.customLogo.width / state.customLogo.height));
+    ctx.drawImage(state.customLogo, P(gx), P(cy - dh / 2), P(iw), P(dh));
+  }else{
+    drawIcon(ctx, state.logoSrc, P(gx + iw / 2), P(cy), P(ih), tc);
+  }
+  if(label){
+    ctx.fillStyle = tc;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, P(gx + iw + gap), P(cy + .12));
+    if('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  }
+  ctx.textBaseline = 'alphabetic';
+}
+
+/* ---------- 播放进度条（两端显示时间） ---------- */
+function parseTime(s){
+  const t = (s || '').trim();
+  if(!t) return null;
+  const p = t.split(':').map(v => Number(v));
+  if(p.length > 3 || p.some(v => !Number.isFinite(v) || v < 0)) return null;
+  return p.reduce((a, v) => a * 60 + v, 0);
+}
+function progressRatio(){
+  const a = parseTime(state.curTime), b = parseTime(state.totalTime);
+  if(a === null || b === null || b <= 0) return 0;
+  return clamp(a / b, 0, 1);
+}
+function drawProgress(ctx, S, tc){
+  const P = mm => mm * S;
+  const x0 = P(7), x1 = P(52), y = P(71.5);
+  const th = P(.7), r = th / 2, ratio = progressRatio();
+
+  ctx.fillStyle = rgba(tc, .26);                       // 轨道
+  rrectPath(ctx, x0, y - r, x1 - x0, th, r); ctx.fill();
+
+  if(ratio > 0){                                       // 已播放
+    ctx.fillStyle = rgba(tc, .92);
+    const w = (x1 - x0) * ratio;
+    if(w <= th){ circlePath(ctx, x0 + r, y, r); ctx.fill(); }
+    else { rrectPath(ctx, x0, y - r, w, th, r); ctx.fill(); }
+  }
+
+  ctx.fillStyle = tc;                                  // 当前进度圆点（可调小）
+  circlePath(ctx, x0 + (x1 - x0) * ratio, y, P(state.progressDot)); ctx.fill();
+
+  ctx.fillStyle = rgba(tc, .6);                        // 两端时间（独立字体）
+  const TF = FONTS[state.timeFont];
+  ctx.font = `500 ${state.timeSize * S}px ${TF.css}`;
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+  ctx.fillText(state.curTime || '', P(7), P(74.5));
+  ctx.textAlign = 'right';
+  ctx.fillText(state.totalTime || '', P(52), P(74.5));
+  ctx.textAlign = 'left';
+}
+
+/* ---------- 进度条下方装饰 ---------- */
+function drawBottom(ctx, S, tc){
+  if(state.ctrlMode === 'none') return;
+  if(state.ctrlMode === 'logo'){ drawLogo(ctx, S, tc); return; }
+  const P = mm => mm * S;
+  const ids = ['shuffle', 'prev', state.ctrlCenter === 'play' ? 'playTri' : 'pause', 'next', 'list'];
+  // 5 个点等距分布在 9.4–49.6mm 区间；中间按钮 6.2mm，两端 4.0mm（QQ 风：播放按钮明显大一圈）
+  const xs = [9.4, 20.05, 29.5, 38.95, 49.6];
+  ids.forEach((id, i) => drawIcon(ctx, id, P(xs[i]), P(79.2), P(i === 2 ? 6.2 : 4.0), tc));
+}
+
+function drawGuides(ctx, S){
+  const P = mm => mm * S;
+  const lw = Math.max(1, S * .1);
+  ctx.save();
+  ctx.lineWidth = lw;
+  // 出血边缘（画布边界）
+  ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(255,255,255,.55)';
+  ctx.strokeRect(lw / 2, lw / 2, P(59) - lw, P(89) - lw);
+  // 裁切线 = 成品 55×85
+  ctx.setLineDash([S * 1.7, S * 1.3]);
+  ctx.strokeStyle = 'rgba(255,255,255,.9)';
+  ctx.strokeRect(P(2), P(2), P(55), P(85));
+  // 安全区（距成品边 5mm）
+  ctx.setLineDash([S * .45, S * 1.5]);
+  ctx.strokeStyle = 'rgba(255,255,255,.32)';
+  ctx.strokeRect(P(7), P(7), P(45), P(75));
+  ctx.restore();
+}
+
+/* =========================================================
+   渲染 & 导出
+   ========================================================= */
+const PREVIEW_S = 1100 / 89;      // 预览画布 1mm 对应像素
+const cv = qs('#preview'), cctx = cv.getContext('2d');
+cv.width = Math.round(59 * PREVIEW_S);
+cv.height = Math.round(89 * PREVIEW_S);
+
+function render(){
+  drawCard(cctx, cv.width / 59, { guides: state.guides });
+  renderCMYK();
+}
+/* 面板上的印刷色值（直接取自当前实际使用的三段渐变） */
+function renderCMYK(){
+  const cols = activeColors();
+  const names = ['起点', '中间', '终点'];
+  qs('#cmykBox').innerHTML = cols.map((c, i) => {
+    const k = cmykOf(c);
+    return `<div class="cmykrow"><span class="cmykdot" style="background:${c}"></span>` +
+           `<b>${names[i]}</b><em>C${k.c} M${k.m} Y${k.y} K${k.k}</em>` +
+           `<s${k.tac > 300 ? ' class="warn"' : ''}>${k.tac}%</s></div>`;
+  }).join('');
+}
+
+/* 300dpi 全幅画布（59×89mm，含出血） */
+function cardCanvas300(){
+  const S = 300 / 25.4;                                   // px/mm
+  const full = document.createElement('canvas');
+  full.width  = Math.round(59 * S);
+  full.height = Math.round(89 * S);
+  drawCard(full.getContext('2d'), full.width / 59, { guides:false });
+  return full;
+}
+/* 裁掉四周 2mm 出血 → 55×85mm */
+function trimCanvas(src){
+  const S = 300 / 25.4;
+  const t = document.createElement('canvas');
+  t.width  = Math.round(55 * S);
+  t.height = Math.round(85 * S);
+  t.getContext('2d').drawImage(src, Math.round(2 * S), Math.round(2 * S), t.width, t.height, 0, 0, t.width, t.height);
+  return t;
+}
+function saveBlob(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+function fileName(){
+  return (state.title || 'music-card').replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 40);
+}
+
+function exportPNG(withBleed){
+  const out = withBleed ? cardCanvas300() : trimCanvas(cardCanvas300());
+  const name = `${fileName()}_${withBleed ? '59x89含出血' : '55x85成品'}_300dpi_RGB.png`;
+  out.toBlob(b => saveBlob(b, name), 'image/png');
+}
+
+/* ---------------- CMYK TIFF 导出 ----------------
+   PNG 标准只支持 RGB/灰度/索引色，无法存 CMYK；
+   TIFF 标准支持 CMYK 且为印厂通用格式，故印刷文件输出 .tif。 */
+function buildTIFF(rgba, w, h, dpi){
+  const IFD = 8, N = 14;
+  const EXT = IFD + 2 + N * 12 + 4;                        // 182：外置数据起点
+  const BPS = EXT, XR = EXT + 8, YR = EXT + 16;            // BitsPerSample、分辨率有理数
+  const PX = EXT + 24;                                     // 206：像素数据起点
+  const buf = new ArrayBuffer(PX + w * h * 4);
+  const dv = new DataView(buf), u8 = new Uint8Array(buf);
+
+  dv.setUint16(0, 0x4949, true);                           // 'II' 小端
+  dv.setUint16(2, 42, true);
+  dv.setUint32(4, IFD, true);
+  dv.setUint16(IFD, N, true);
+
+  let p = IFD + 2;
+  const SHORT = 3, LONG = 4, RATIONAL = 5;
+  const tag = (id, type, count, val) => {
+    dv.setUint16(p, id, true); dv.setUint16(p + 2, type, true);
+    dv.setUint32(p + 4, count, true);
+    if(type === SHORT && count === 1){ dv.setUint16(p + 8, val, true); dv.setUint16(p + 10, 0, true); }
+    else dv.setUint32(p + 8, val, true);
+    p += 12;
+  };
+  tag(256, SHORT, 1, w);                                   // 宽
+  tag(257, SHORT, 1, h);                                   // 高
+  tag(258, SHORT, 4, BPS);                                 // 每通道 8 位 ×4
+  tag(259, SHORT, 1, 1);                                   // 不压缩
+  tag(262, SHORT, 1, 5);                                   // Photometric = Separated(CMYK)
+  tag(273, LONG,  1, PX);                                  // 像素数据偏移
+  tag(277, SHORT, 1, 4);                                   // 通道数 4
+  tag(278, SHORT, 1, h);                                   // 每带行数
+  tag(279, LONG,  1, w * h * 4);                           // 每带字节数
+  tag(282, RATIONAL, 1, XR);                               // X 分辨率
+  tag(283, RATIONAL, 1, YR);                               // Y 分辨率
+  tag(284, SHORT, 1, 1);                                   // 连续存储
+  tag(296, SHORT, 1, 2);                                   // 分辨率单位 = inch
+  tag(332, SHORT, 1, 1);                                   // InkSet = CMYK
+  dv.setUint32(p, 0, true);                                // 无后续 IFD
+
+  [8,8,8,8].forEach((b, i) => dv.setUint16(BPS + i * 2, b, true));
+  dv.setUint32(XR, dpi, true); dv.setUint32(XR + 4, 1, true);
+  dv.setUint32(YR, dpi, true); dv.setUint32(YR + 4, 1, true);
+
+  let o = PX;                                              // CMYK 值：0 = 0%，255 = 100%
+  for(let i = 0, j = 0; i < w * h; i++, j += 4){
+    const q = compressChroma(rgba[j], rgba[j + 1], rgba[j + 2]);
+    const ink = clampInk(rgb2cmyk(q.r, q.g, q.b));
+    u8[o++] = Math.round(ink.c * 255);
+    u8[o++] = Math.round(ink.m * 255);
+    u8[o++] = Math.round(ink.y * 255);
+    u8[o++] = Math.round(ink.k * 255);
+  }
+  return buf;
+}
+function exportTIFF(){
+  const full = cardCanvas300();
+  const w = full.width, h = full.height;
+  const rgba = full.getContext('2d').getImageData(0, 0, w, h).data;
+  const buf = buildTIFF(rgba, w, h, 300);
+  saveBlob(new Blob([buf], { type:'image/tiff' }), `${fileName()}_59x89含出血_300dpi_CMYK.tif`);
+}
+
+/* =========================================================
+   界面逻辑
+   ========================================================= */
+function readImage(file, cb){
+  if(!file || !file.type || !file.type.startsWith('image/')) return;
+  const rd = new FileReader();
+  rd.onload = e => {
+    const im = new Image();
+    im.onload = () => { im.__name = file.name; cb(im); };
+    im.src = e.target.result;
+  };
+  rd.readAsDataURL(file);
+}
+function setCover(img){
+  state.srcCover = img;
+  state.cover = state.softProof ? toPrintImage(img) : img;   // 上传后自动转 CMYK
+  qs('#coverName').textContent = img.__name || '已载入';
+  autoPalette();                              // 每次换封面都重新取色
+  if(state.bgMode !== 'auto') setBgMode('auto');
+  render();
+}
+function autoPalette(seed){
+  if(!state.cover) return;
+  const s = seed || state.auto.seed;
+  const list = extractPalette(state.cover, s);
+  if(!list) return;
+  state.auto.seed = s;
+  state.auto.colors = buildAutoColors(list, s);
+  syncAutoChips();
+}
+function syncAutoChips(){
+  state.auto.colors.forEach((c, i) => { qs('#a' + i).value = c; });
+}
+function setBgMode(m){
+  state.bgMode = m;
+  [...qs('#bgMode').children].forEach(b => b.classList.toggle('on', b.dataset.v === m));
+  qs('#paneAuto').classList.toggle('hide', m !== 'auto');
+  qs('#paneTheme').classList.toggle('hide', m !== 'theme');
+  qs('#paneSolid').classList.toggle('hide', m !== 'solid');
+  syncSliders();
+  render();
+}
+function syncSliders(){
+  const md = state.modes[state.bgMode];
+  qs('#angle').value = md.angle; qs('#angVal').textContent = md.angle + '°';
+  qs('#lum').value = md.lum;     qs('#lumVal').textContent = md.lum;
+}
+function setCtrlMode(m){
+  state.ctrlMode = m;
+  [...qs('#ctrlMode').children].forEach(b => b.classList.toggle('on', b.dataset.v === m));
+  qs('#paneCtrl').classList.toggle('hide', m !== 'controls');
+  qs('#paneLogo').classList.toggle('hide', m !== 'logo');
+  render();
+}
+
+/* ---------- 初始化界面 ---------- */
+(function initUI(){
+  // 图标选择
+  const row = qs('#iconRow');
+  ICON_ROW.forEach(it => {
+    const b = document.createElement('button');
+    b.className = 'ib' + (it.id === state.logoSrc ? ' on' : '');
+    b.title = it.t; b.dataset.v = it.id;
+    if(it.id === 'custom' || it.id === 'none'){
+      b.innerHTML = it.id === 'none'
+        ? '<span style="font-size:11px;color:#8f949e">无</span>'
+        : '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
+    }else{
+      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('viewBox','0 0 24 24');
+      svg.innerHTML = ICON_SVG[it.id];
+      b.appendChild(svg);
+    }
+    b.onclick = () => {
+      if(it.id === 'none'){ state.logoSrc = 'none'; }
+      else if(it.id === 'custom'){
+        if(!state.customLogo){ qs('#logoInput').click(); return; }
+        state.logoSrc = 'custom';
+      }else{ state.logoSrc = it.id; }
+      [...row.children].forEach(c => c.classList.toggle('on', c.dataset.v === state.logoSrc));
+      render();
+    };
+    row.appendChild(b);
+  });
+
+  // 主题色板
+  const sw = qs('#themeSw');
+  THEMES.forEach((t, i) => {
+    const b = document.createElement('button');
+    b.className = 'sw' + (i === state.themeIdx ? ' on' : '');
+    b.style.background = `linear-gradient(160deg,${t.c[0]},${t.c[1]},${t.c[2]})`;
+    b.innerHTML = `<span>${t.n}</span>`;
+    b.onclick = () => {
+      state.themeIdx = i;
+      [...sw.children].forEach((c, k) => c.classList.toggle('on', k === i));
+      render();
+    };
+    sw.appendChild(b);
+  });
+
+  // 字体下拉（每块独立）
+  const FONT_SELECTS = ['titleFont','artistFont','logoTextFont','timeFont'];
+  FONT_SELECTS.forEach(id => {
+    const sel = qs('#' + id);
+    Object.entries(FONTS).forEach(([k, v]) => {
+      const op = document.createElement('option');
+      op.value = k; op.textContent = v.n; op.style.fontFamily = v.css;
+      sel.appendChild(op);
+    });
+    sel.value = state[id];
+  });
+  qs('#titleSize').value = state.titleSize;   qs('#titleSizeV').textContent = state.titleSize.toFixed(1) + ' mm';
+  qs('#artistSize').value = state.artistSize; qs('#artistSizeV').textContent = state.artistSize.toFixed(1) + ' mm';
+  qs('#logoTextSize').value = state.logoTextSize; qs('#logoTextSizeV').textContent = state.logoTextSize.toFixed(1) + ' mm';
+  qs('#timeSize').value = state.timeSize;     qs('#timeSizeV').textContent = state.timeSize.toFixed(1) + ' mm';
+  qs('#progressDot').value = state.progressDot; qs('#dotVal').textContent = state.progressDot.toFixed(2) + ' mm';
+
+  syncAutoChips();
+  syncSliders();
+})();
+
+/* ---------- 事件绑定 ---------- */
+qs('#pickCover').onclick = () => qs('#coverInput').click();
+qs('#coverInput').onchange = e => readImage(e.target.files[0], setCover);
+
+qs('#pickLogo').onclick = () => qs('#logoInput').click();
+qs('#logoInput').onchange = e => readImage(e.target.files[0], img => {
+  state.customLogo = img;
+  qs('#logoName').textContent = img.__name || '已载入';
+  state.logoSrc = 'custom';
+  [...qs('#iconRow').children].forEach(c => c.classList.toggle('on', c.dataset.v === 'custom'));
+  render();
+});
+
+qs('#title').oninput  = e => { state.title = e.target.value; render(); };
+qs('#artist').oninput = e => { state.artist = e.target.value; render(); };
+qs('#logoText').oninput = e => { state.logoText = e.target.value; render(); };
+
+qs('#curTime').oninput   = e => { state.curTime = e.target.value; render(); };
+qs('#totalTime').oninput = e => { state.totalTime = e.target.value; render(); };
+[...qs('#ctrlMode').children].forEach(b => b.onclick = () => setCtrlMode(b.dataset.v));
+[...qs('#ctrlCenter').children].forEach(b => b.onclick = () => {
+  state.ctrlCenter = b.dataset.v;
+  [...qs('#ctrlCenter').children].forEach(c => c.classList.toggle('on', c === b));
+  render();
+});
+
+[...qs('#bgMode').children].forEach(b => b.onclick = () => setBgMode(b.dataset.v));
+[...qs('#coverStyle').children].forEach(b => b.onclick = () => {
+  state.coverStyle = b.dataset.v;
+  [...qs('#coverStyle').children].forEach(c => c.classList.toggle('on', c === b));
+  render();
+});
+['#a0','#a1','#a2'].forEach((id, i) => qs(id).oninput = e => {
+  state.auto.colors[i] = e.target.value; render();
+});
+qs('#reroll').onclick = () => { autoPalette(Math.floor(Math.random() * 9999) + 1); render(); };
+qs('#solidColor').oninput = e => { state.solid = e.target.value; render(); };
+
+qs('#angle').oninput = e => {
+  state.modes[state.bgMode].angle = +e.target.value;
+  qs('#angVal').textContent = e.target.value + '°'; render();
+};
+qs('#lum').oninput = e => {
+  state.modes[state.bgMode].lum = +e.target.value;
+  qs('#lumVal').textContent = e.target.value; render();
+};
+qs('#glow').onchange = e => { state.glow = e.target.checked; render(); };
+qs('#softProof').onchange = e => {
+  state.softProof = e.target.checked;
+  if(state.srcCover){
+    state.cover = state.softProof ? toPrintImage(state.srcCover) : state.srcCover;
+    autoPalette();
+  }
+  render();
+};
+qs('#guides').onchange = e => { state.guides = e.target.checked; render(); };
+
+[...qs('#textMode').children].forEach(b => b.onclick = () => {
+  state.textMode = b.dataset.v;
+  [...qs('#textMode').children].forEach(c => c.classList.toggle('on', c === b));
+  render();
+});
+
+[...qs('#align').children].forEach(b => b.onclick = () => {
+  state.align = b.dataset.v;
+  [...qs('#align').children].forEach(c => c.classList.toggle('on', c === b));
+  render();
+});
+/* —— 字体与字号滑块 —— */
+qs('#titleFont').onchange     = e => { state.titleFont   = e.target.value; render(); };
+qs('#artistFont').onchange    = e => { state.artistFont  = e.target.value; render(); };
+qs('#logoTextFont').onchange  = e => { state.logoTextFont = e.target.value; render(); };
+qs('#timeFont').onchange      = e => { state.timeFont    = e.target.value; render(); };
+
+qs('#titleSize').oninput      = e => { state.titleSize   = +e.target.value; qs('#titleSizeV').textContent   = (+e.target.value).toFixed(1)+' mm'; render(); };
+qs('#artistSize').oninput     = e => { state.artistSize  = +e.target.value; qs('#artistSizeV').textContent  = (+e.target.value).toFixed(1)+' mm'; render(); };
+qs('#logoTextSize').oninput   = e => { state.logoTextSize = +e.target.value; qs('#logoTextSizeV').textContent = (+e.target.value).toFixed(1)+' mm'; render(); };
+qs('#timeSize').oninput       = e => { state.timeSize    = +e.target.value; qs('#timeSizeV').textContent    = (+e.target.value).toFixed(1)+' mm'; render(); };
+qs('#progressDot').oninput    = e => { state.progressDot = +e.target.value; qs('#dotVal').textContent       = (+e.target.value).toFixed(2)+' mm'; render(); };
+
+/* —— JSON 导入 / 导出 —— */
+function exportFontConfig(){
+  const cfg = {
+    titleFont: state.titleFont, titleSize: state.titleSize,
+    artistFont: state.artistFont, artistSize: state.artistSize,
+    logoTextFont: state.logoTextFont, logoTextSize: state.logoTextSize,
+    timeFont: state.timeFont, timeSize: state.timeSize,
+    progressDot: state.progressDot,
+    align: state.align, textMode: state.textMode
+  };
+  const blob = new Blob([JSON.stringify(cfg, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const name = (state.title || 'music-card').replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,40);
+  a.href = url; a.download = name + '_字体配置.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+function importFontConfig(file){
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const cfg = JSON.parse(r.result);
+      const apply = (key, id, isRange) => {
+        if(cfg[key] !== undefined){
+          if(!isRange && !FONTS[cfg[key]]) return;      // JSON 引用了本机未加载的字体（如自定义字体）则跳过，防崩
+          state[key] = cfg[key];
+          const el = qs('#' + id);
+          if(el){
+            if(isRange){ el.value = cfg[key]; const v = qs('#' + id + 'V'); if(v) v.textContent = (+cfg[key]).toFixed(key==='progressDot'?2:1)+' mm'; }
+            else el.value = cfg[key];
+          }
+        }
+      };
+      apply('titleFont','titleFont');     apply('titleSize','titleSize',true);
+      apply('artistFont','artistFont');   apply('artistSize','artistSize',true);
+      apply('logoTextFont','logoTextFont'); apply('logoTextSize','logoTextSize',true);
+      apply('timeFont','timeFont');       apply('timeSize','timeSize',true);
+      apply('progressDot','progressDot',true);
+      if(cfg.align !== undefined){ state.align = cfg.align; [...qs('#align').children].forEach(b => b.classList.toggle('on', b.dataset.v === cfg.align)); }
+      if(cfg.textMode !== undefined){ state.textMode = cfg.textMode; [...qs('#textMode').children].forEach(b => b.classList.toggle('on', b.dataset.v === cfg.textMode)); }
+      render();
+    }catch(e){ alert('配置文件解析失败：' + e.message); }
+  };
+  r.readAsText(file);
+}
+qs('#expFont').onclick = exportFontConfig;
+qs('#impFont').onclick = () => qs('#fontJson').click();
+qs('#fontJson').onchange = e => { if(e.target.files[0]) importFontConfig(e.target.files[0]); e.target.value = ''; };
+
+/* —— 自定义字体上传（FontFace 动态注册，追加到 4 个字体下拉框） —— */
+let userFontSeq = 0;
+async function registerUserFont(name, buf){
+  const fam = 'UserFont' + (++userFontSeq);
+  const face = new FontFace(fam, buf);
+  await face.load();
+  document.fonts.add(face);
+  const key = 'user' + userFontSeq;
+  const label = (name || '自定义字体').replace(/\.(ttf|otf|woff2?)$/i, '');
+  FONTS[key] = { n: label, css: `${fam}, sans-serif`, w: 700 };
+  ['titleFont','artistFont','logoTextFont','timeFont'].forEach(id => {
+    const op = document.createElement('option');
+    op.value = key; op.textContent = label; op.style.fontFamily = fam;
+    qs('#' + id).appendChild(op);
+  });
+  qs('#ttfName').textContent = label;
+  render();
+  return key;
+}
+qs('#pickTtf').onclick = () => qs('#ttfInput').click();
+qs('#ttfInput').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if(!f) return;
+  try{ await registerUserFont(f.name, await f.arrayBuffer()); }
+  catch(err){ alert('字体加载失败：' + err.message); }
+};
+
+
+qs('#expCmyk').onclick  = () => exportTIFF();
+qs('#expBleed').onclick = () => exportPNG(true);
+qs('#expTrim').onclick  = () => exportPNG(false);
+
+/* 拖拽上传封面 */
+const stage = qs('#stage');
+['dragenter','dragover'].forEach(t => stage.addEventListener(t, e => {
+  e.preventDefault(); stage.classList.add('drag');
+}));
+['dragleave','drop'].forEach(t => stage.addEventListener(t, e => {
+  e.preventDefault(); stage.classList.remove('drag');
+}));
+stage.addEventListener('drop', e => {
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) readImage(f, setCover);
+});
+
+render();
+</script>
+</body>
+</html>
